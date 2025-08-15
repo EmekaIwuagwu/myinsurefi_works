@@ -14,7 +14,7 @@ pub struct InsurancePolicy {
     pub metadata: felt252,
 }
 
-#[derive(Drop, Serde, starknet::Store)]
+#[derive(Drop, Serde, starknet::Store, Copy)]
 pub struct Claim {
     pub id: u256,
     pub policy_id: u256,
@@ -77,8 +77,6 @@ pub mod MyInsurFiToken {
     use super::{ContractAddress, get_caller_address, get_contract_address, get_block_timestamp};
     use super::{InsurancePolicy, Claim};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess, Map};
-
-    const ZERO_ADDRESS: felt252 = 0;
 
     #[storage]
     struct Storage {
@@ -196,11 +194,12 @@ pub mod MyInsurFiToken {
         // Mint initial supply to owner
         self.balances.write(owner, 40_000_000_000_000_000_000_000_000);
 
-        // Emit initial transfer event
-        self.emit(Transfer { 
-            from: starknet::contract_address_try_from_felt252(ZERO_ADDRESS).unwrap(), 
-            to: owner, 
-            value: 40_000_000_000_000_000_000_000_000 
+        // Emit initial transfer event - use zero address manually
+        let zero_address: ContractAddress = 0_felt252.try_into().unwrap();
+        self.emit(Transfer {
+            from: zero_address,
+            to: owner,
+            value: 40_000_000_000_000_000_000_000_000
         });
     }
 
@@ -241,7 +240,7 @@ pub mod MyInsurFiToken {
             let caller = get_caller_address();
             let current_allowance = self.allowances.read((from, caller));
             assert(current_allowance >= amount, 'Insufficient allowance');
-            
+
             self.allowances.write((from, caller), current_allowance - amount);
             self._transfer(from, to, amount);
             true
@@ -279,7 +278,7 @@ pub mod MyInsurFiToken {
             assert(!self.paused.read(), 'Contract is paused');
             let caller = get_caller_address();
             let policy = self.policies.read(policy_id);
-            
+
             assert(policy.policy_holder == caller, 'Not policy holder');
             assert(policy.is_active, 'Policy not active');
             assert(get_block_timestamp() <= policy.end_date, 'Policy expired');
@@ -298,7 +297,7 @@ pub mod MyInsurFiToken {
         fn cancel_policy(ref self: ContractState, policy_id: u256) -> bool {
             let caller = get_caller_address();
             let mut policy = self.policies.read(policy_id);
-            
+
             assert(policy.policy_holder == caller, 'Not policy holder');
             assert(policy.is_active, 'Policy already inactive');
 
@@ -312,7 +311,7 @@ pub mod MyInsurFiToken {
             assert(!self.paused.read(), 'Contract is paused');
             let caller = get_caller_address();
             let policy = self.policies.read(policy_id);
-            
+
             assert(policy.policy_holder == caller, 'Not policy holder');
             assert(policy.is_active, 'Policy not active');
             assert(claim_amount <= policy.coverage_amount, 'Claim exceeds coverage');
@@ -341,15 +340,18 @@ pub mod MyInsurFiToken {
             let caller = get_caller_address();
             let admin = self.admin.read();
             assert(caller == admin, 'Only admin allowed');
-            
+
             let mut claim = self.claims.read(claim_id);
             assert(claim.status == 0, 'Claim not pending'); // 0 = Pending
+
+            // Save claim amount before modifying claim
+            let claim_amount = claim.claim_amount;
             
             claim.status = 1; // 1 = Approved
             claim.processing_date = get_block_timestamp();
             self.claims.write(claim_id, claim);
 
-            self.emit(ClaimApproved { claim_id, amount: claim.claim_amount });
+            self.emit(ClaimApproved { claim_id, amount: claim_amount });
             true
         }
 
@@ -357,10 +359,10 @@ pub mod MyInsurFiToken {
             let caller = get_caller_address();
             let admin = self.admin.read();
             assert(caller == admin, 'Only admin allowed');
-            
+
             let mut claim = self.claims.read(claim_id);
             assert(claim.status == 0, 'Claim not pending'); // 0 = Pending
-            
+
             claim.status = 2; // 2 = Rejected
             claim.processing_date = get_block_timestamp();
             self.claims.write(claim_id, claim);
@@ -372,16 +374,16 @@ pub mod MyInsurFiToken {
             let caller = get_caller_address();
             let admin = self.admin.read();
             assert(caller == admin, 'Only admin allowed');
-            
+
             let mut claim = self.claims.read(claim_id);
             assert(claim.status == 1, 'Claim not approved'); // 1 = Approved
-            
+
             // Transfer claim amount to claimant
             self._transfer(get_contract_address(), claim.claimant, claim.claim_amount);
-            
+
             claim.status = 3; // 3 = Paid
             self.claims.write(claim_id, claim);
-            
+
             true
         }
 
@@ -393,11 +395,11 @@ pub mod MyInsurFiToken {
         fn validate_and_pay_for_transaction(ref self: ContractState, transaction_hash: felt252, max_fee: u256) -> bool {
             let caller = get_caller_address();
             let sponsorship_balance = self.sponsorship_balances.read(caller);
-            
+
             assert(sponsorship_balance >= max_fee, 'Insufficient balance');
-            
+
             self.sponsorship_balances.write(caller, sponsorship_balance - max_fee);
-            
+
             self.emit(TransactionSponsored { user: caller, transaction_hash, fee_amount: max_fee });
             true
         }
@@ -435,18 +437,20 @@ pub mod MyInsurFiToken {
             let caller = get_caller_address();
             let admin = self.admin.read();
             assert(caller == admin, 'Only admin allowed');
-            
+
             let current_supply = self.total_supply.read();
             let new_supply = current_supply + amount;
-            
+
             self.total_supply.write(new_supply);
             let current_balance = self.balances.read(to);
             self.balances.write(to, current_balance + amount);
-            
-            self.emit(Transfer { 
-                from: starknet::contract_address_try_from_felt252(ZERO_ADDRESS).unwrap(), 
-                to, 
-                value: amount 
+
+            // Use zero address manually
+            let zero_address: ContractAddress = 0_felt252.try_into().unwrap();
+            self.emit(Transfer {
+                from: zero_address,
+                to,
+                value: amount
             });
             true
         }
@@ -471,11 +475,11 @@ pub mod MyInsurFiToken {
         fn _transfer(ref self: ContractState, from: ContractAddress, to: ContractAddress, amount: u256) {
             let from_balance = self.balances.read(from);
             assert(from_balance >= amount, 'Insufficient balance');
-            
+
             self.balances.write(from, from_balance - amount);
             let to_balance = self.balances.read(to);
             self.balances.write(to, to_balance + amount);
-            
+
             self.emit(Transfer { from, to, value: amount });
         }
 
