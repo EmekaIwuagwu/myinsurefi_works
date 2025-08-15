@@ -172,7 +172,7 @@ pub mod MyInsurFiToken {
     #[constructor]
     fn constructor(ref self: ContractState, owner: ContractAddress) {
         // Initialize ERC20 token
-        self.name.write("MY Insurance Token");
+        self.name.write("MY InsurFi Token");
         self.symbol.write("MYSU");
         self.decimals.write(18);
         self.total_supply.write(40_000_000_000_000_000_000_000_000); // 40 million with 18 decimals
