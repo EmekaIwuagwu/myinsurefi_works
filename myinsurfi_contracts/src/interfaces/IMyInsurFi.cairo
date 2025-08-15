@@ -1,4 +1,4 @@
-use starknet::ContractAddress;
+/*use starknet::ContractAddress;
 use crate::types::insurance_types::{InsurancePolicy, InsuranceType, Claim};
 
 #[starknet::interface]
@@ -71,3 +71,5 @@ pub trait IMyInsurFi<TContractState> {
     
     fn is_authorized_agent(self: @TContractState, agent_address: ContractAddress) -> bool;
 }
+
+*/

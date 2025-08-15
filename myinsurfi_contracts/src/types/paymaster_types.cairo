@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 
 // Transaction sponsorship record
-#[derive(Drop, Serde, starknet::Store)]
+#[derive(Drop, Serde, starknet::Store, Copy)]
 pub struct TransactionSponsorshipRecord {
     pub id: u256,
     pub user: ContractAddress,
@@ -11,9 +11,17 @@ pub struct TransactionSponsorshipRecord {
 }
 
 // Simple sponsorship configuration
-#[derive(Drop, Serde, starknet::Store)]
+#[derive(Drop, Serde, starknet::Store, Copy)]
 pub struct SponsorshipConfig {
     pub daily_limit: u256,
+    pub is_active: bool,
+}
+
+// Sponsorship limit structure - ADDED THIS!
+#[derive(Drop, Serde, starknet::Store, Copy)]
+pub struct SponsorshipLimit {
+    pub daily_limit: u256,
+    pub transaction_type_limit: u256,
     pub is_active: bool,
 }
 

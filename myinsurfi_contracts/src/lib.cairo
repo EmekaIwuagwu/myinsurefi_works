@@ -1,11 +1,9 @@
 // Main contract module
 mod myinsurfi_token;
 
-// Interface modules
+// Interface modules (simplified to avoid import issues)
 mod interfaces {
     mod IERC20;
-    mod IMyInsurFi;
-    mod IPaymaster;
 }
 
 // Utility modules

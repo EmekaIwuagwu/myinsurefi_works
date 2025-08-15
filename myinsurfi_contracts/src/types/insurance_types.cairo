@@ -15,7 +15,7 @@ pub struct InsurancePolicy {
 }
 
 // Claims structure
-#[derive(Drop, Serde, starknet::Store)]
+#[derive(Drop, Serde, starknet::Store, Copy)]
 pub struct Claim {
     pub id: u256,
     pub policy_id: u256,
@@ -25,6 +25,16 @@ pub struct Claim {
     pub status: u8, // 0=Pending, 1=Approved, 2=Rejected, 3=Paid
     pub submission_date: u64,
     pub processing_date: u64,
+}
+
+// Insurance type enum - Fixed warning
+#[derive(Drop, Serde, starknet::Store, PartialEq, Copy)]
+#[allow(starknet::store_no_default_variant)]
+pub enum InsuranceType {
+    Health,
+    Travel,
+    Schengen,
+    House,
 }
 
 // Insurance type constants
