@@ -483,30 +483,40 @@ pub mod MyInsurFiToken {
             self.emit(Transfer { from, to, value: amount });
         }
 
-        fn _create_policy(ref self: ContractState, insurance_type: u8, coverage_amount: u256, premium_amount: u256, duration: u64, metadata: felt252) -> u256 {
-            let caller = get_caller_address();
-            let policy_id = self.policy_counter.read() + 1;
-            self.policy_counter.write(policy_id);
+        // In src/myinsurfi_token.cairo, replace the _create_policy function with this:
 
-            let start_date = get_block_timestamp();
-            let end_date = start_date + duration;
+fn _create_policy(ref self: ContractState, insurance_type: u8, coverage_amount: u256, premium_amount: u256, duration: u64, metadata: felt252) -> u256 {
+    let caller = get_caller_address();
+    let policy_id = self.policy_counter.read() + 1;
+    self.policy_counter.write(policy_id);
 
-            let policy = InsurancePolicy {
-                id: policy_id,
-                policy_holder: caller,
-                insurance_type,
-                coverage_amount,
-                premium_amount,
-                start_date,
-                end_date,
-                is_active: true,
-                metadata,
-            };
+    let start_date = get_block_timestamp();
+    
+    // Fix: Use explicit casting to prevent u64 overflow
+    let start_date_u256: u256 = start_date.into();
+    let duration_u256: u256 = duration.into();
+    let end_date_u256 = start_date_u256 + duration_u256;
+    
+    // Convert back to u64, but check for reasonable bounds first
+    assert(end_date_u256 < 0x10000000000000000, 'Duration too large');
+    let end_date: u64 = end_date_u256.try_into().unwrap();
 
-            self.policies.write(policy_id, policy);
+    let policy = InsurancePolicy {
+        id: policy_id,
+        policy_holder: caller,
+        insurance_type,
+        coverage_amount,
+        premium_amount,
+        start_date,
+        end_date,
+        is_active: true,
+        metadata,
+    };
 
-            self.emit(PolicyCreated { policy_id, user: caller, insurance_type, coverage_amount });
-            policy_id
-        }
+    self.policies.write(policy_id, policy);
+
+    self.emit(PolicyCreated { policy_id, user: caller, insurance_type, coverage_amount });
+    policy_id
+}
     }
 }
