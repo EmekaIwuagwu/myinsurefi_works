@@ -1,0 +1,14 @@
+{
+    "network": "sepolia-alpha",
+    "owner": "0x01c63f0d7ea35151700589c39f94552e8f4ee12df5266f7ab27b3ba670699b18",
+    "classHash": "0x01c751e058e8ed440adf4308d7613c3346f84a519285ba48863c0f052047a6d3",
+    "contractAddress": "0x062d864e1f0a9539ff12b280376a6da4ae9e3fa6362b31ec669c3199ddc17edc",
+    "token": {
+        "name": "MY InsurFi Token",
+        "symbol": "MYSU",
+        "decimals": 18,
+        "totalSupply": "40000000000000000000000000"
+    },
+    "deploymentDate": "2025-08-16T06:53:41Z",
+    "explorerUrl": "https://testnet.starkscan.co/contract/0x062d864e1f0a9539ff12b280376a6da4ae9e3fa6362b31ec669c3199ddc17edc"
+}

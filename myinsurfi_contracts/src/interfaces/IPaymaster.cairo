@@ -1,4 +1,4 @@
-/*use starknet::ContractAddress;
+use starknet::ContractAddress;
 use crate::types::paymaster_types::{TransactionSponsorshipRecord, SponsorshipLimit};
 
 #[starknet::interface]
@@ -99,5 +99,3 @@ pub trait IPaymaster<TContractState> {
     
     fn get_total_sponsorship_balance(self: @TContractState) -> u256;
 }
-
-*/
